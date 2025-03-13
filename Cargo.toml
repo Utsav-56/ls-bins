@@ -1,0 +1,24 @@
+[package]
+name = "lsd"
+version = "0.1.0"
+edition = "2024"
+
+
+
+
+[[bin]]
+name = "lsd"
+path = "src/lsd.rs"
+
+[[bin]]
+name = "lsf"
+path = "src/lsf.rs"
+
+[[bin]]
+name = "lsp"
+path = "src/lsp.rs"
+
+
+[dependencies]
+chrono = "0.4.40"
+colored = "3.0.0"
