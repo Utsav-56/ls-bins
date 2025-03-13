@@ -38,15 +38,12 @@ pub fn run(path: &Option<String>) {
 }
 
 fn main() {
-
     let args: Vec<String> = std::env::args().collect();
     let path = if args.len() > 1 {
         Some(args[1].clone())
     } else {
         None
     };
-
-
 
     run(&path);
 }
