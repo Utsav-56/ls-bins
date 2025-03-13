@@ -19,6 +19,12 @@ name = "lsp"
 path = "src/lsp.rs"
 
 
+[[bin]]
+name = "lsv"
+path = "src/lsv.rs"
+
+
+
 [dependencies]
 chrono = "0.4.40"
 colored = "3.0.0"
