@@ -19,19 +19,21 @@ struct Cli {
 fn main() {
     let cli = Cli::parse();
     let queries: Vec<_> = cli.query.iter().map(|s| s.to_lowercase()).collect();
-    let order = matches!(cli.order.to_lowercase().as_str(), "asc" | "1" | "a");
-    run(cli.path, queries, cli.sort.first().unwrap_or(&"n".to_string()), order, cli.index);
+    let desc_order = matches!(cli.order.to_lowercase().as_str(), "desc" | "0" | "d");
+    run(cli.path, queries, cli.sort.first().unwrap_or(&"n".to_string()), desc_order, cli.index);
 }
 
-fn run(path: String, queries: Vec<String>, sort: &String, asc: bool, index: String) {
+fn run(path: String, queries: Vec<String>, sort: &String, desc: bool, query_index: String) {
     let dir = Path::new(&path);
     if !dir.is_dir() {
         eprintln!("{}", "Error: Not a valid directory".red());
         return;
     }
 
+    let query_index = <i8>::from_str_radix(&query_index, 10).unwrap_or(-1);
 
-    let mut ind = 0;
+
+
     let mut results: Vec<_> = fs::read_dir(dir).unwrap_or_else(|_| {
         eprintln!("{}", "Error: Unable to read directory".red());
         std::process::exit(1);
@@ -40,16 +42,31 @@ fn run(path: String, queries: Vec<String>, sort: &String, asc: bool, index: Stri
         .filter_map(|entry| {
             let path = entry.path();
             path.is_dir().then(|| {
-                ind += 1;
+
                 let name = path.file_name()?.to_string_lossy().into_owned();
                 let count = fs::read_dir(&path).map(|iter| iter.count()).unwrap_or(0);
                 let modified = entry.metadata().ok()?.modified().ok()?;
-                Some((ind, name, count, DateTime::<Local>::from(modified)))
+                Some((0, name, count, DateTime::<Local>::from(modified)))
             })
         })
         .flatten()
-        .filter(|(ind ,name, _, _)| queries.is_empty() || queries.iter().any(|q| Regex::new(&format!("(?i){}", regex::escape(q))).unwrap().is_match(name)))
+        .filter(|(_, name, _, _)| queries.is_empty() || queries.iter().any(|q| Regex::new(&format!("(?i){}", regex::escape(q))).unwrap().is_match(name)))
         .collect();
+
+    if query_index <= 0 || query_index as usize > results.len() {
+        println!("");
+        return;
+    }
+
+
+    // Assign proper index values (starting from 1)
+    for (idx, item) in results.iter_mut().enumerate() {
+        item.0 = idx + 1;
+        if query_index as usize == idx+1 {
+            println!("{}", item.1);
+            return;
+        }
+    }
 
     match sort.as_str() {
         "m" | "modified" => results.sort_by(|a, b| b.2.cmp(&a.2)),
@@ -57,14 +74,9 @@ fn run(path: String, queries: Vec<String>, sort: &String, asc: bool, index: Stri
         "n" | "name" => results.sort_by(|a, b| a.0.cmp(&b.0)),
         _ => {}
     }
-    if asc { results.reverse(); }
+    if desc { results.reverse(); }
 
-    if let Ok(idx) = index.parse::<usize>() {
-        if let Some((_, name, _, _)) = results.get(idx) {
-            println!("{}", name);
-            return;
-        }
-    }
+
 
     println!("{:<5} | {:<35} | {:<6} | {}", "Index".bold().underline(), "Folder Name".bold().underline(), "Items".bold().underline(), "Modified At".bold().underline());
     for (i, (indx, name, count, modified_at)) in results.iter().enumerate() {
