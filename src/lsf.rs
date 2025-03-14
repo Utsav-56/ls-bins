@@ -8,13 +8,8 @@ pub fn run(path: &Option<String>) {
     let path = Path::new(dir);
 
     if let Ok(entries) = fs::read_dir(path) {
-        println!(
-            "{:<5} | {:<25} | {:<10} | {}",
-            "Index".bold().underline(),
-            "File Name".bold().underline(),
-            "Size (KB)".bold().underline(),
-            "Modified At".bold().underline()
-        );
+        println!("{}", "Index | File Name | Size (KB) | Modified At".bold().underline());
+
         for (index, entry) in entries.filter_map(Result::ok).enumerate() {
             if let Ok(metadata) = entry.metadata() {
                 if metadata.is_file() {
@@ -23,11 +18,8 @@ pub fn run(path: &Option<String>) {
                     let size_kb = metadata.len() as f64 / 1024.0;
 
                     println!(
-                        "{:<5} | {:<25} | {:<10.2} | {}",
-                        index,
-                        file_name,
-                        size_kb,
-                        modified.format("%Y-%m-%d %H:%M:%S")
+                        "{:<5} | {:<20} | {:<10.2} | {}",
+                        index, file_name, size_kb, modified.format("%Y-%m-%d %H:%M:%S")
                     );
                 }
             }
