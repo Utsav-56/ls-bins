@@ -62,6 +62,8 @@ fn run(path: String, queries: Vec<String>, sort: &String, asc: bool, query_index
         eprintln!("{}", "Error: Not a valid directory".red());
         return;
     }
+    let mut largest_len = 0;
+    let mut current_len = 0;
 
     let mut results: Vec<_> = fs::read_dir(dir).unwrap_or_else(|_| {
         eprintln!("{}", "Error: Unable to read directory".red());
@@ -74,6 +76,11 @@ fn run(path: String, queries: Vec<String>, sort: &String, asc: bool, query_index
             let name = path.file_name()?.to_string_lossy().into_owned();
             let size = entry.metadata().ok()?.len();
             let modified = entry.metadata().ok()?.modified().ok()?;
+
+            current_len = name.len();
+            if current_len > largest_len {
+                largest_len = current_len;
+            }
             Some((0, name, size, DateTime::<Local>::from(modified)))
         })
     })
@@ -109,10 +116,12 @@ fn run(path: String, queries: Vec<String>, sort: &String, asc: bool, query_index
 
 
 
-    println!("{:<5} | {:<35} | {:<8} | {}", "Index".bold().underline(), "File Name".bold().underline(), "Size".bold().underline(), "Modified At".bold().underline());
-    for (i, (indx, name, size, modified_at)) in results.iter().enumerate() {
-        println!("{:<5} | {:<35} | {:<8} | {}", (indx).to_string().blue(), name.bold().green(), get_redable_size(*size), modified_at.format("%Y-%m-%d %H:%M:%S"));
-    }
+  let header = format!("{:<5} | {:<width$} | {:<8} | {}", "S.n".bold().underline(), "File Name".bold().underline(), "Size".bold().underline(), "Modified At".bold().underline(), width = largest_len);
+  println!("{}", header);
+  for (i, (indx, name, size, modified_at)) in results.iter().enumerate() {
+      let line = format!("{:<5} | {:<width$} | {:<8} | {}", (indx).to_string().blue(), name.bold().green(), get_redable_size(*size), modified_at.format("%Y-%m-%d %H:%M:%S"), width = largest_len);
+      println!("{}", line);
+  }
 }
 
 
@@ -170,7 +179,7 @@ fn run_minimal(path: String, queries: Vec<String>, sort: &String, asc: bool, que
 
 
 
-    let header = format!("{:<5} | {:<width$} |", "Index".bold().underline(), "File Name".bold().underline(), width = largest_len);
+    let header = format!("{:<5} | {:<width$} |", "S.n".bold().underline(), "File Name".bold().underline(), width = largest_len);
     println!("{}", header);
     for (_, (indx, name)) in results.iter().enumerate() {
         let line = format!("{:<5} | {:<width$} |", (indx).to_string().blue(), name.bold().green(), width = largest_len);
