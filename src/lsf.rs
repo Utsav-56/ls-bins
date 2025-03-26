@@ -58,7 +58,7 @@ fn main() {
 
 fn run(path: String, queries: Vec<String>, sort: &String, asc: bool, query_index: usize) {
     let dir = Path::new(&path);
-    if !dir.is_dir() {
+    if (!dir.is_dir()) {
         eprintln!("{}", "Error: Not a valid directory".red());
         return;
     }
@@ -78,53 +78,53 @@ fn run(path: String, queries: Vec<String>, sort: &String, asc: bool, query_index
             let modified = entry.metadata().ok()?.modified().ok()?;
 
             current_len = name.len();
-            if current_len > largest_len {
+            if (current_len > largest_len) {
                 largest_len = current_len;
             }
             Some((0, name, size, DateTime::<Local>::from(modified)))
         })
     })
     .flatten()
-        .filter(|(_, name, _, _)| queries.is_empty() || queries.iter().any(|q| Regex::new(&format!("(?i){}", regex::escape(q))).unwrap().is_match(name)))
-        .collect();
+    .collect();
 
-    if query_index > 0 && (query_index) > results.len() {
+    if (query_index > 0 && query_index > results.len()) {
         println!("");
         return;
     }
 
-    //sort by name first and then assign index values
-     results.sort_by(|a, b| a.1.cmp(&b.1));
+    // Sort by name first and then assign index values
+    results.sort_by(|a, b| a.1.cmp(&b.1));
 
     // Assign proper index values (starting from 1)
     for (idx, item) in results.iter_mut().enumerate() {
         item.0 = idx + 1;
-
-        if query_index == idx+1 {
-            println!("{}", item.1);
-            return;
-        }
     }
 
-
+    // Sort results based on the sort parameter
     match sort.as_str() {
         "m" | "modified" => results.sort_by(|a, b| b.3.cmp(&a.3)),
         "s" | "size" => results.sort_by(|a, b| b.2.cmp(&a.2)),
         _ => {}
     }
-    if asc { results.reverse(); }
+    if (asc) { results.reverse(); }
 
+    // Filter the search query
+    let filtered_results: Vec<_> = results.iter()
+        .filter(|(_, name, _, _)| queries.is_empty() || queries.iter().any(|q| Regex::new(&format!("(?i){}", regex::escape(q))).unwrap().is_match(name)))
+        .collect();
 
+    if (query_index > 0 && query_index <= filtered_results.len()) {
+        println!("{}", filtered_results[query_index - 1].1);
+        return;
+    }
 
-  let header = format!("{:<5} | {:<width$} | {:<8} | {}", "S.n".bold().underline(), "File Name".bold().underline(), "Size".bold().underline(), "Modified At".bold().underline(), width = largest_len);
-  println!("{}", header);
-  for (i, (indx, name, size, modified_at)) in results.iter().enumerate() {
-      let line = format!("{:<5} | {:<width$} | {:<8} | {}", (indx).to_string().blue(), name.bold().green(), get_redable_size(*size), modified_at.format("%Y-%m-%d %H:%M:%S"), width = largest_len);
-      println!("{}", line);
-  }
+    let header = format!("{:<5} | {:<width$} | {:<8} | {}", "S.n".bold().underline(), "File Name".bold().underline(), "Size".bold().underline(), "Modified At".bold().underline(), width = largest_len);
+    println!("{}", header);
+    for (i, (indx, name, size, modified_at)) in filtered_results.iter().enumerate() {
+        let line = format!("{:<5} | {:<width$} | {:<8} | {}", (indx).to_string().blue(), name.bold().green(), get_redable_size(*size), modified_at.format("%Y-%m-%d %H:%M:%S"), width = largest_len);
+        println!("{}", line);
+    }
 }
-
-
 fn run_minimal(path: String, queries: Vec<String>, sort: &String, asc: bool, query_index: usize) {
     let dir = Path::new(&path);
     if !dir.is_dir() {
