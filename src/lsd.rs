@@ -92,8 +92,18 @@ fn run(path: String, queries: Vec<String>, sort: &String, desc: bool, query_inde
 
             Some((0, name, count, DateTime::<Local>::from(modified)))
         })
-    })
-    .flatten()
+    }).flatten().collect();
+
+    // Assign proper index values (starting from 1)
+    for (idx, item) in results.iter_mut().enumerate() {
+        item.0 = idx + 1;
+        if query_index == idx + 1 {
+            println!("{}", item.1);
+            return;
+        }
+    }
+
+     results = results. into_iter()
     .filter(|(_, name, _, _)| queries.is_empty() || queries.iter().any(|q| Regex::new(&format!("(?i){}", regex::escape(q))).unwrap().is_match(name)))
     .collect();
 
@@ -105,14 +115,7 @@ fn run(path: String, queries: Vec<String>, sort: &String, desc: bool, query_inde
         return;
     }
 
-    // Assign proper index values (starting from 1)
-    for (idx, item) in results.iter_mut().enumerate() {
-        item.0 = idx + 1;
-        if query_index == idx + 1 {
-            println!("{}", item.1);
-            return;
-        }
-    }
+
 
     match sort.as_str() {
         "m" | "modified" => results.sort_by(|a, b| b.3.cmp(&a.3)),
