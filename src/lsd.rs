@@ -124,8 +124,11 @@ fn run(path: String, queries: Vec<String>, sort: &String, desc: bool, query_inde
     }
 
     if desc { results.reverse(); }
+    if largest_len < 6 {
+        largest_len = 7;
+    }
 
-    let headers = format!("{:<5} | {:<width$} | {:<items_width$} | {}", "Index".bold().underline(), "Folder Name".bold().underline(), "Items".bold().underline(),"Modified At".bold().underline(), width = largest_len, items_width = largest_count+6);
+    let headers = format!("{:<5} | {:<width$} | {:<items_width$} | {}", "Index".bold().underline(), "Folder".bold().underline(), "Items".bold().underline(),"Modified At".bold().underline(), width = largest_len, items_width = largest_count+6);
 
     println!("{}", headers);
 
@@ -162,7 +165,6 @@ fn run_minimal(path: String, queries: Vec<String>, sort: &String, desc: bool, qu
         })
     })
     .flatten()
-    .filter(|(_, name)| queries.is_empty() || queries.iter().any(|q| Regex::new(&format!("(?i){}", regex::escape(q))).unwrap().is_match(name)))
     .collect();
 
     // Sort by name first and then give them a proper index
@@ -173,6 +175,8 @@ fn run_minimal(path: String, queries: Vec<String>, sort: &String, desc: bool, qu
         return;
     }
 
+
+
     // Assign proper index values (starting from 1)
     for (idx, item) in results.iter_mut().enumerate() {
         item.0 = idx + 1;
@@ -182,9 +186,18 @@ fn run_minimal(path: String, queries: Vec<String>, sort: &String, desc: bool, qu
         }
     }
 
-    if desc { results.reverse(); }
+    results = results.into_iter()
+        .filter(|(_, name)| queries.is_empty() || queries.iter().any(|q| Regex::new(&format!("(?i){}", regex::escape(q))).unwrap().is_match(name)))
+        .collect();
 
-    let header = format!("{:<5} | {:<width$} |", "S.n".bold().underline(), "Folder Name".bold().underline(), width = largest_len);
+
+
+    if desc { results.reverse(); }
+    if largest_len < 6 {
+        largest_len = 7;
+    }
+
+    let header = format!("{:<5} | {:<width$} |", "S.n".bold().underline(), "Folder".bold().underline(), width = largest_len);
     println!("{}", header);
 
     // println!("{:<5} | {:<35} |", "Index".bold().underline(), "Folder Name".bold().underline());

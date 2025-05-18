@@ -118,7 +118,11 @@ fn run(path: String, queries: Vec<String>, sort: &String, asc: bool, query_index
         return;
     }
 
-    let header = format!("{:<5} | {:<width$} | {:<8} | {}", "S.n".bold().underline(), "File Name".bold().underline(), "Size".bold().underline(), "Modified At".bold().underline(), width = largest_len);
+    if largest_len < 6 {
+        largest_len = 7;
+    }
+
+    let header = format!("{:<5} | {:<width$} | {:<8} | {}", "S.n".bold().underline(), "File".bold().underline(), "Size".bold().underline(), "Modified At".bold().underline(), width = largest_len);
     println!("{}", header);
     for (i, (indx, name, size, modified_at)) in filtered_results.iter().enumerate() {
         let line = format!("{:<5} | {:<width$} | {:<8} | {}", (indx).to_string().blue(), name.bold().green(), get_redable_size(*size), modified_at.format("%Y-%m-%d %H:%M:%S"), width = largest_len);
@@ -153,7 +157,6 @@ fn run_minimal(path: String, queries: Vec<String>, sort: &String, asc: bool, que
             })
         })
         .flatten()
-        .filter(|(_, name)| queries.is_empty() || queries.iter().any(|q| Regex::new(&format!("(?i){}", regex::escape(q))).unwrap().is_match(name)))
         .collect();
 
     if query_index > 0 && (query_index) > results.len() {
@@ -174,12 +177,19 @@ fn run_minimal(path: String, queries: Vec<String>, sort: &String, asc: bool, que
         }
     }
 
+    results = results. into_iter()
+        .filter(|(_, name)| queries.is_empty() || queries.iter().any(|q| Regex::new(&format!("(?i){}", regex::escape(q))).unwrap().is_match(name)))
+        .collect();
+
 
     if asc { results.reverse(); }
 
+    if largest_len < 5 {
+        largest_len = 5;
+    }
 
 
-    let header = format!("{:<5} | {:<width$} |", "S.n".bold().underline(), "File Name".bold().underline(), width = largest_len);
+    let header = format!("{:<5} | {:<width$} |", "S.n".bold().underline(), "File".bold().underline(), width = largest_len);
     println!("{}", header);
     for (_, (indx, name)) in results.iter().enumerate() {
         let line = format!("{:<5} | {:<width$} |", (indx).to_string().blue(), name.bold().green(), width = largest_len);
